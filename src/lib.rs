@@ -17,31 +17,19 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
 }
 
 pub fn search<'a>(query: &str, contents: &'a str) -> Vec<&'a str> {
-    let mut results = Vec::new();
-
-    for line in contents.lines() {
-        if line.contains(query) {
-            results.push(line);
-        }
-    }
-
-    results
+    contents
+        .lines()
+        .filter(|line| line.contains(query))
+        .collect()
 }
 
 pub fn search_case_insensitive<'a>(query: &str, contents: &'a str) -> Vec<&'a str> {
-    let mut results = Vec::new();
-
     let lower_query = query.to_lowercase();
 
-    for line in contents.lines() {
-        let lower_line = line.to_lowercase();
-
-        if lower_line.contains(&lower_query) {
-            results.push(line);
-        }
-    }
-
-    results
+    contents
+        .lines()
+        .filter(|line| line.to_lowercase().contains(&lower_query))
+        .collect()
 }
 
 pub struct Config {
@@ -51,18 +39,24 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn new(args: &[String]) -> Result<Config, &'static str> {
-        if args.len() < 3 {
-            return Err("Insufficient arguments!");
-        }
+    pub fn new(args: std::env::Args) -> Result<Config, &'static str> {
+        // We don't care about the binary path
+        let mut args = args.skip(1);
 
-        let query = args[1].clone();
-        let filename = args[2].clone();
+        let query = match args.next() {
+            Some(arg) => arg,
+            None => return Err("Query string missing!"),
+        };
+
+        let filename = match args.next() {
+            Some(arg) => arg,
+            None => return Err("File to search missing!"),
+        };
 
         let case_sensitive: bool;
 
-        if let Some(option) = args.get(3) {
-            case_sensitive = match CaseFormat::from_string(option) {
+        if let Some(option) = args.next() {
+            case_sensitive = match CaseFormat::from_string(&option) {
                 CaseFormat::Keep => true,
                 CaseFormat::Ignore => false,
             };
