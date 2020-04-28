@@ -1,5 +1,7 @@
 use std::{env, error::Error, fs};
 
+use clap::{App, Arg};
+
 pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
     let contents = fs::read_to_string(config.filename)?;
 
@@ -39,51 +41,54 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn new(args: std::env::Args) -> Result<Config, &'static str> {
-        // We don't care about the binary path
-        let mut args = args.skip(1);
+    pub fn from_clap_app() -> Result<Config, &'static str> {
+        let matches = App::new("Rust - Minigrep")
+            .version(env!("CARGO_PKG_VERSION"))
+            .author("Dídac S. <didac.semente@gmail.com>")
+            .about("'grep' command implementation in Rust")
+            .arg(
+                Arg::with_name("ignore_case")
+                    .help("Ignore case distinctions")
+                    .short("i")
+                    .long("ignore-case"),
+            )
+            .arg(
+                Arg::with_name("keep_case")
+                    .help("Keep case distinctions, takes precedence over --ignore-case")
+                    .short("k")
+                    .long("keep-case"),
+            )
+            .arg(
+                Arg::with_name("EXPRESSION")
+                    .help("Expression to search for")
+                    .required(true)
+                    .index(1),
+            )
+            .arg(
+                Arg::with_name("FILE")
+                    .help("File to be searched")
+                    .required(true),
+            )
+            .get_matches();
 
-        let query = match args.next() {
-            Some(arg) => arg,
+        let ignore_case = matches.is_present("ignore_case");
+        let keep_case = matches.is_present("keep_case");
+
+        let expression = match matches.value_of("EXPRESSION") {
+            Some(expr) => expr,
             None => return Err("Query string missing!"),
         };
 
-        let filename = match args.next() {
-            Some(arg) => arg,
+        let file = match matches.value_of("FILE") {
+            Some(expr) => expr,
             None => return Err("File to search missing!"),
         };
 
-        let case_sensitive: bool;
-
-        if let Some(option) = args.next() {
-            case_sensitive = match CaseFormat::from_string(&option) {
-                CaseFormat::Keep => true,
-                CaseFormat::Ignore => false,
-            };
-        } else {
-            case_sensitive = env::var("CASE_INSENSITIVE").is_err();
-        }
-
         Ok(Config {
-            query,
-            filename,
-            case_sensitive,
+            query: String::from(expression),
+            filename: String::from(file),
+            case_sensitive: keep_case || (!ignore_case && env::var("CASE_INSENSITIVE").is_err()),
         })
-    }
-}
-
-enum CaseFormat {
-    Keep,
-    Ignore,
-}
-
-impl CaseFormat {
-    fn from_string(string: &str) -> CaseFormat {
-        if string.starts_with("I") {
-            CaseFormat::Ignore
-        } else {
-            CaseFormat::Keep
-        }
     }
 }
 
