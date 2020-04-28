@@ -1,6 +1,6 @@
 [package]
 name = "minigrep"
-version = "0.2.2"
+version = "0.3.0"
 authors = ["Dídac Sementé Fernández <didac.semente@gmail.com>"]
 edition = "2018"
 
