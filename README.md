@@ -11,3 +11,7 @@ For example:
 `cargo run to poem.txt I`
 
 If the casing parameter is not present, `mingrep` will search for an environment variable called `CASE_INSENSITIVE`, the default behaviour is to keep the casing information on search.
+
+## Repo status
+
+![Rust](https://github.com/DiD92/rust-minigrep/workflows/Rust/badge.svg?branch=master)
